@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fundo: #f2f4f0;
+  --color-superficie: #fdfdfc;
+  --color-tinta: #18231e;
+  --color-suave: #6b7a72;
+  --color-traco: #e2e6de;
+  --color-em-dia: #3f7a63;
+  --color-a-vencer: #b07a22;
+  --color-vencido: #9b3a44;
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+
+  --radius-cartao: 0.875rem;
+}
+
+body {
+  background: var(--color-fundo);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* ponytail: classes de componente em vez de repetir utilitários em 8 arquivos */
+  .cartao {
+    @apply rounded-cartao border border-traco bg-superficie;
+  }
+
+  .btn,
+  .btn-primario,
+  .btn-escuro,
+  .btn-suave {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2
+      text-sm font-medium transition-colors disabled:opacity-50;
+  }
+  .btn-primario {
+    @apply bg-em-dia text-superficie hover:bg-em-dia/90;
+  }
+  .btn-escuro {
+    @apply bg-tinta text-superficie hover:bg-tinta/90;
+  }
+  .btn-suave {
+    @apply border border-traco bg-superficie text-tinta hover:bg-fundo;
+  }
+
+  .campo {
+    @apply w-full rounded-lg border border-traco bg-superficie px-3 py-2
+      placeholder:text-suave/70 focus:border-em-dia;
+  }
+
+  .selo {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 font-mono text-xs
+      font-medium tabular-nums;
+  }
+
+  .titulo-secao {
+    @apply font-mono text-[0.7rem] font-medium tracking-[0.14em] text-suave uppercase;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

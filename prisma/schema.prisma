@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Paciente {
+  id            String     @id @default(cuid())
+  nome          String
+  telefone      String // E.164 sem símbolos: 5514999999999
+  intervaloDias Int        @default(30)
+  ativo         Boolean    @default(true)
+  observacoes   String?
+  criadoEm      DateTime   @default(now())
+  consultas     Consulta[]
+  contatos      Contato[]
+}
+
+model Consulta {
+  id         String         @id @default(cuid())
+  pacienteId String
+  dataHora   DateTime
+  status     StatusConsulta @default(AGENDADA)
+  notas      String?
+  paciente   Paciente       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@index([pacienteId, dataHora])
+}
+
+model Contato {
+  id         String           @id @default(cuid())
+  pacienteId String
+  data       DateTime         @default(now())
+  resultado  ResultadoContato @default(ENVIADO)
+  paciente   Paciente         @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@index([pacienteId, data])
+}
+
+enum StatusConsulta {
+  AGENDADA
+  REALIZADA
+  FALTOU
+  CANCELADA
+}
+
+enum ResultadoContato {
+  ENVIADO
+  RESPONDEU
+  REMARCOU
+  SEM_RESPOSTA
+}
