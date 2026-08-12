@@ -1,5 +1,6 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { buscarPacientesParaContatar, diasDesde, FUSO } from "@/lib/recall";
+import { tentarSincronizarGoogleAgenda } from "@/lib/google-calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export async function GET(request: Request) {
   const para = process.env.EMAIL_RESUMO;
   const endereco = process.env.APP_URL ?? new URL(request.url).origin;
   const agora = new Date();
+  await tentarSincronizarGoogleAgenda();
   const pacientes = await buscarPacientesParaContatar();
 
   if (!chave || !para) {
