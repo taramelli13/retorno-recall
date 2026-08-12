@@ -1,68 +1,210 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-fundo: #f2f4f0;
-  --color-superficie: #fdfdfc;
-  --color-tinta: #18231e;
-  --color-suave: #6b7a72;
-  --color-traco: #e2e6de;
-  --color-em-dia: #3f7a63;
-  --color-a-vencer: #b07a22;
-  --color-vencido: #9b3a44;
-
-  --font-display: var(--font-fraunces);
-  --font-sans: var(--font-plex-sans);
-  --font-mono: var(--font-plex-mono);
-
-  --radius-cartao: 0.875rem;
+  --color-whatsapp: #25d366;
+  --color-whatsapp-dark: #1da851;
 }
 
-body {
-  background: var(--color-fundo);
-  color: var(--color-tinta);
-  font-family: var(--font-sans);
+@theme inline {
+  /* Cores de status: verde/âmbar/vermelho, com variante clara/escura em :root/.dark */
+  --color-em-dia: var(--em-dia);
+  --color-em-dia-suave: var(--em-dia-suave);
+  --color-a-vencer: var(--a-vencer);
+  --color-a-vencer-suave: var(--a-vencer-suave);
+  --color-vencido: var(--vencido);
+  --color-vencido-suave: var(--vencido-suave);
+
+  /* Nomes antigos do projeto apontando para os tokens shadcn:
+     as telas continuam usando bg-fundo, text-tinta etc. */
+  --color-fundo: var(--muted);
+  --color-superficie: var(--card);
+  --color-tinta: var(--foreground);
+  --color-suave: var(--muted-foreground);
+  --color-traco: var(--border);
+
+  --font-display: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-cartao: calc(var(--radius) * 1.4);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-tinta);
-  outline-offset: 2px;
+:root {
+  --em-dia: oklch(0.627 0.194 149.214);
+  --em-dia-suave: oklch(0.982 0.018 155.826);
+  --a-vencer: oklch(0.666 0.179 58.318);
+  --a-vencer-suave: oklch(0.987 0.022 95.277);
+  --vencido: oklch(0.577 0.245 27.325);
+  --vencido-suave: oklch(0.971 0.013 17.38);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --em-dia: oklch(0.792 0.209 151.711);
+  --em-dia-suave: oklch(0.266 0.065 152.934);
+  --a-vencer: oklch(0.828 0.189 84.429);
+  --a-vencer-suave: oklch(0.279 0.077 45.635);
+  --vencido: oklch(0.704 0.191 22.216);
+  --vencido-suave: oklch(0.258 0.092 26.042);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }
 
 @layer components {
-  /* ponytail: classes de componente em vez de repetir utilitários em 8 arquivos */
   .cartao {
-    @apply rounded-cartao border border-traco bg-superficie;
+    @apply rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200;
+  }
+
+  .cartao-interativo {
+    @apply rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0;
   }
 
   .btn,
   .btn-primario,
   .btn-escuro,
-  .btn-suave {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2
-      text-sm font-medium transition-colors disabled:opacity-50;
+  .btn-suave,
+  .btn-whatsapp {
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 text-sm font-medium transition-all outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
   }
-  .btn-primario {
-    @apply bg-em-dia text-superficie hover:bg-em-dia/90;
-  }
+
+  .btn-primario,
   .btn-escuro {
-    @apply bg-tinta text-superficie hover:bg-tinta/90;
+    @apply bg-primary text-primary-foreground shadow-xs hover:bg-primary/90;
   }
+
+  .btn-whatsapp {
+    @apply bg-whatsapp text-white shadow-xs hover:bg-whatsapp-dark font-semibold;
+  }
+
   .btn-suave {
-    @apply border border-traco bg-superficie text-tinta hover:bg-fundo;
+    @apply border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground;
   }
 
   .campo {
-    @apply w-full rounded-lg border border-traco bg-superficie px-3 py-2
-      placeholder:text-suave/70 focus:border-em-dia;
+    @apply w-full rounded-md border border-input bg-superficie px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none;
   }
 
   .selo {
-    @apply inline-flex items-center rounded-full px-2.5 py-1 font-mono text-xs
-      font-medium tabular-nums;
+    @apply inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium tabular-nums;
   }
 
   .titulo-secao {
-    @apply font-mono text-[0.7rem] font-medium tracking-[0.14em] text-suave uppercase;
+    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
   }
 }
 

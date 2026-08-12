@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { COOKIE_SESSAO, selo } from "@/lib/sessao";
+import { IconAlertCircle } from "@/app/components/icons";
 
 export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
   const { erro } = await searchParams;
@@ -24,32 +25,49 @@ export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-xs px-4 pt-24">
-      <h1 className="font-display text-2xl font-semibold">Retorno</h1>
-      <form action={entrar} className="cartao mt-6 flex flex-col gap-3 p-5">
-        <label htmlFor="senha" className="text-sm">
-          Senha
-        </label>
-        <input
-          id="senha"
-          name="senha"
-          type="password"
-          autoFocus
-          required
-          className="campo"
-        />
-        <button
-          type="submit"
-          className="btn-escuro"
-        >
-          Entrar
-        </button>
-        {erro && (
-          <p role="alert" className="text-sm text-vencido">
-            Senha incorreta. Tente de novo.
+    <main className="flex min-h-[85vh] items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-6">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-tinta text-superficie shadow-md mb-3">
+            <span className="font-display text-xl font-bold">R</span>
+          </div>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-tinta">
+            Retorno
+          </h1>
+          <p className="mt-1 font-mono text-xs text-suave uppercase tracking-wider">
+            Acesso Restrito ao Consultório
           </p>
-        )}
-      </form>
+        </div>
+
+        <form action={entrar} className="cartao flex flex-col gap-4 p-6">
+          <label htmlFor="senha" className="flex flex-col gap-1.5">
+            <span className="titulo-secao">Senha de Acesso</span>
+            <input
+              id="senha"
+              name="senha"
+              type="password"
+              autoFocus
+              required
+              placeholder="••••••••"
+              className="campo font-mono"
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="btn-escuro w-full py-2.5"
+          >
+            Entrar no Sistema
+          </button>
+
+          {erro && (
+            <div role="alert" className="flex items-center gap-1.5 text-sm text-vencido bg-vencido-suave p-3 rounded-lg border border-vencido/20">
+              <IconAlertCircle className="size-4 shrink-0" />
+              <span>Senha incorreta. Tente novamente.</span>
+            </div>
+          )}
+        </form>
+      </div>
     </main>
   );
 }

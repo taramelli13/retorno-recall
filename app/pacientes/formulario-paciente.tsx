@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { ResultadoPaciente } from "./actions";
+import { IconCheck, IconAlertCircle } from "@/app/components/icons";
 
 type Campos = {
   nome?: string;
@@ -28,78 +29,83 @@ export function FormularioPaciente({
   const campos: Campos = estado.digitado ?? valores;
 
   return (
-    <form action={enviar} className="flex flex-col gap-4 p-4">
-      <label className="flex flex-col gap-1">
-        <span className="titulo-secao">Nome</span>
+    <form action={enviar} className="flex flex-col gap-4 p-5">
+      <label className="flex flex-col gap-1.5">
+        <span className="titulo-secao">Nome Completo</span>
         <input
           name="nome"
           defaultValue={campos.nome}
           required
           autoComplete="off"
-          className="campo"
+          placeholder="Ex: Maria Silva"
+          className="campo font-medium text-base"
         />
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="titulo-secao">Telefone</span>
-        <input
-          name="telefone"
-          type="tel"
-          inputMode="tel"
-          defaultValue={campos.telefone}
-          required
-          placeholder="(14) 99999-9999"
-          className="campo font-mono"
-        />
-      </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1.5">
+          <span className="titulo-secao">Telefone (WhatsApp)</span>
+          <input
+            name="telefone"
+            type="tel"
+            inputMode="tel"
+            defaultValue={campos.telefone}
+            required
+            placeholder="(14) 99999-9999"
+            className="campo font-mono"
+          />
+        </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="titulo-secao">Intervalo de retorno (dias)</span>
-        <input
-          name="intervaloDias"
-          type="number"
-          min={1}
-          max={365}
-          defaultValue={campos.intervaloDias ?? 30}
-          required
-          className="campo w-28 font-mono"
-        />
-      </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="titulo-secao">Intervalo de retorno (dias)</span>
+          <input
+            name="intervaloDias"
+            type="number"
+            min={1}
+            max={365}
+            defaultValue={campos.intervaloDias ?? 30}
+            required
+            className="campo font-mono"
+          />
+        </label>
+      </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="titulo-secao">Observações</span>
+      <label className="flex flex-col gap-1.5">
+        <span className="titulo-secao">Observações Rápidas</span>
         <textarea
           name="observacoes"
           defaultValue={campos.observacoes ?? ""}
-          rows={2}
+          rows={3}
           maxLength={500}
-          placeholder="prefere terça à tarde"
+          placeholder="Ex: Prefere horários de terça-feira à tarde. Alergia a lactose."
           className="campo"
         />
       </label>
 
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-2.5 pt-1 cursor-pointer select-none">
         <input
           name="ativo"
           type="checkbox"
           defaultChecked={campos.ativo ?? true}
-          className="size-4"
+          className="size-4 rounded accent-em-dia cursor-pointer"
         />
-        <span className="titulo-secao">Em acompanhamento</span>
+        <span className="text-sm font-medium text-tinta">Paciente em acompanhamento ativo</span>
       </label>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={pendente}
           className="btn-escuro"
         >
-          {rotulo}
+          <IconCheck className="size-4" />
+          <span>{rotulo}</span>
         </button>
         {estado.erro && (
-          <p role="alert" className="text-sm text-vencido">
-            {estado.erro}
-          </p>
+          <div role="alert" className="flex items-center gap-1.5 text-sm text-vencido font-medium">
+            <IconAlertCircle className="size-4 shrink-0" />
+            <span>{estado.erro}</span>
+          </div>
         )}
       </div>
     </form>
