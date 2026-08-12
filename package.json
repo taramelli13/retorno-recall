@@ -9,6 +9,7 @@
     "lint": "eslint",
     "seed": "tsx --env-file=.env prisma/seed.ts",
     "recall": "tsx --env-file=.env scripts/recall.ts",
+    "sync-calendar": "tsx --env-file=.env scripts/sync-calendar.ts",
     "test": "vitest run"
   },
   "dependencies": {
