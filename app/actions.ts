@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { tentarCriarEventoConsulta } from "@/lib/google-calendar";
 import { FUSO } from "@/lib/recall";
 
 const id = z.string().min(1).max(64);
@@ -28,9 +29,11 @@ export async function marcarRetorno(pacienteId: string, data: string) {
     return { erro: "Essa data já passou. Escolha hoje ou uma data futura." };
   }
 
-  await db.consulta.create({
+  const consulta = await db.consulta.create({
     data: { pacienteId: id.parse(pacienteId), dataHora, status: "AGENDADA" },
+    include: { paciente: { select: { nome: true } } },
   });
+  await tentarCriarEventoConsulta(consulta.id, consulta.paciente.nome, dataHora);
   revalidatePath("/");
   return { erro: null };
 }

@@ -1,4 +1,5 @@
-import { fromZonedTime } from "date-fns-tz";
+import { addDays } from "date-fns";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { db } from "./db";
 import { FUSO } from "./recall";
 
@@ -119,6 +120,54 @@ export async function sincronizarGoogleAgenda() {
   }
 
   return { sincronizados, ignorados, totalEventos: eventos.length };
+}
+
+/**
+ * Cria o evento no Google Agenda quando uma consulta é marcada no app.
+ * Evento de dia inteiro: o sistema só guarda o dia, não o horário.
+ * Melhor esforço: sem credenciais ou com erro no Google, a consulta
+ * continua salva no banco — o evento é conveniência, não fonte de verdade.
+ */
+export async function tentarCriarEventoConsulta(
+  consultaId: string,
+  nomePaciente: string,
+  dataHora: Date,
+) {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_REFRESH_TOKEN) return;
+  try {
+    const token = await obterAccessTokenGoogle();
+    const dia = formatInTimeZone(dataHora, FUSO, "yyyy-MM-dd");
+    const diaSeguinte = formatInTimeZone(addDays(dataHora, 1), FUSO, "yyyy-MM-dd");
+
+    const response = await fetch(
+      "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: `Consulta — ${nomePaciente}`,
+          start: { date: dia },
+          end: { date: diaSeguinte },
+        }),
+      },
+    );
+
+    const evento = await response.json();
+    if (!response.ok) {
+      throw new Error(`Erro ao criar evento: ${JSON.stringify(evento)}`);
+    }
+
+    // Liga a consulta ao evento: o sync reconhece pelo id e não duplica.
+    await db.consulta.update({
+      where: { id: consultaId },
+      data: { googleEventId: evento.id as string },
+    });
+  } catch (err) {
+    console.error("Erro ao criar evento no Google Agenda:", err);
+  }
 }
 
 /**
