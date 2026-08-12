@@ -66,6 +66,39 @@ export async function buscarEventosGoogleCalendar(dataInicio = new Date()): Prom
   return (data.items || []) as EventoGoogleCalendar[];
 }
 
+const normalizar = (texto: string) =>
+  texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+
+/**
+ * Decide a qual paciente um evento da agenda pertence.
+ *
+ * Só palavras inteiras contam — "ana" não pode casar com "semanais" nem
+ * "Juliana" — e é preciso acertar pelo menos duas partes do nome (ou o nome
+ * todo, se ele só tiver uma parte útil). Telefone com 8+ dígitos também vale.
+ */
+export function encontrarPacienteDoEvento<
+  P extends { nome: string; telefone: string },
+>(textoEvento: string, pacientes: P[]): P | undefined {
+  const palavras = new Set(normalizar(textoEvento).split(/[^a-z0-9]+/));
+  const digitos = textoEvento.replace(/\D/g, "");
+
+  return pacientes.find((p) => {
+    const partes = normalizar(p.nome)
+      .split(/\s+/)
+      .filter((parte) => parte.length > 2);
+    const acertos = partes.filter((parte) => palavras.has(parte)).length;
+    const nomeMatch = partes.length > 0 && acertos >= Math.min(2, partes.length);
+
+    const telefone = p.telefone.replace(/\D/g, "");
+    const telefoneMatch = telefone.length >= 8 && digitos.includes(telefone);
+
+    return nomeMatch || telefoneMatch;
+  });
+}
+
 /**
  * Sincroniza os eventos do Google Agenda com o banco de dados do Retorno.
  * Associa cada evento ao paciente correspondente (pelo nome ou telefone).
@@ -80,7 +113,7 @@ export async function sincronizarGoogleAgenda() {
   for (const evento of eventos) {
     if (evento.status === "cancelled" || !evento.start) continue;
 
-    const textoEvento = `${evento.summary || ""} ${evento.description || ""}`.toLowerCase();
+    const textoEvento = `${evento.summary || ""} ${evento.description || ""}`;
     if (!evento.start.dateTime && !evento.start.date) continue;
 
     // Evento de dia inteiro não tem hora: meio-dia de Brasília, como o resto
@@ -89,12 +122,7 @@ export async function sincronizarGoogleAgenda() {
       ? new Date(evento.start.dateTime)
       : fromZonedTime(`${evento.start.date}T12:00:00`, FUSO);
 
-    // Tenta encontrar o paciente pelo nome ou telefone no título/descrição do evento
-    const pacienteEncontrado = pacientes.find((p) => {
-      const nomeMatch = p.nome.toLowerCase().split(" ").some(parte => parte.length > 2 && textoEvento.includes(parte.toLowerCase()));
-      const telefoneMatch = p.telefone && textoEvento.replace(/\D/g, "").includes(p.telefone.replace(/\D/g, ""));
-      return nomeMatch || telefoneMatch;
-    });
+    const pacienteEncontrado = encontrarPacienteDoEvento(textoEvento, pacientes);
 
     if (pacienteEncontrado) {
       await db.consulta.upsert({
