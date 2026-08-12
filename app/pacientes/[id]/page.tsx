@@ -159,6 +159,9 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
                 <li key={i} className="flex items-start gap-3 px-5 py-3.5 text-sm hover:bg-fundo/50 transition-colors">
                   <span className="shrink-0 pt-0.5 font-mono text-xs text-suave tabular-nums">
                     {formatInTimeZone(e.data, FUSO, "dd/MM/yy")}
+                    {/* 12:00 é a convenção de "sem horário" — só hora real aparece */}
+                    {formatInTimeZone(e.data, FUSO, "HH:mm") !== "12:00" &&
+                      ` ${formatInTimeZone(e.data, FUSO, "HH:mm")}`}
                   </span>
                   
                   <div className="flex-1 min-w-0">

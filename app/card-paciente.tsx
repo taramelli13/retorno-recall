@@ -182,7 +182,13 @@ export function CardPaciente(p: CardProps) {
           <form
             className="mt-4 flex flex-col sm:flex-row gap-2 rounded-xl bg-fundo p-3 border border-traco/80"
             action={(dados) =>
-              acao(() => marcarRetorno(p.id, String(dados.get("data"))))
+              acao(() =>
+                marcarRetorno(
+                  p.id,
+                  String(dados.get("data")),
+                  dados.get("hora") ? String(dados.get("hora")) : undefined,
+                ),
+              )
             }
           >
             <label className="sr-only" htmlFor={`data-${p.id}`}>
@@ -199,6 +205,15 @@ export function CardPaciente(p: CardProps) {
                 className="campo font-mono text-sm"
               />
             </div>
+            <label className="sr-only" htmlFor={`hora-${p.id}`}>
+              Horário do retorno de {p.nome} (opcional)
+            </label>
+            <input
+              id={`hora-${p.id}`}
+              name="hora"
+              type="time"
+              className="campo font-mono text-sm"
+            />
             <button type="submit" className="btn-escuro shrink-0">
               <IconCheck className="size-4" />
               <span>Salvar Agendamento</span>
