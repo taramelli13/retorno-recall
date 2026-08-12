@@ -6,7 +6,7 @@ import { fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { tentarCriarEventoConsulta } from "@/lib/google-calendar";
-import { FUSO } from "@/lib/recall";
+import { diasDesde, FUSO } from "@/lib/recall";
 import { analisarCsv } from "@/lib/csv";
 import { pacienteSchema, primeiroErro } from "@/lib/paciente";
 
@@ -100,8 +100,8 @@ export async function registrarConsulta(
     },
     include: { paciente: { select: { nome: true } } },
   });
-  // Só agendamento futuro vira evento; registrar histórico não mexe na agenda.
-  if (r.data.status === "AGENDADA" && dataHora > new Date()) {
+  // Só agendamento de hoje em diante vira evento; histórico não mexe na agenda.
+  if (r.data.status === "AGENDADA" && diasDesde(dataHora) <= 0) {
     await tentarCriarEventoConsulta(consulta.id, consulta.paciente.nome, dataHora);
   }
   revalidatePath("/");

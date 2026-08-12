@@ -46,6 +46,12 @@ test("marcar retorno tira a paciente da tela, mesmo aguardando", async () => {
   expect(l.aguardando).not.toContain(alvo.nome);
 });
 
+test("marcar retorno para hoje funciona em qualquer horário", async () => {
+  const alvo = (await buscarPacientesParaContatar()).paraContatar[0];
+  const hoje = new Date().toISOString().slice(0, 10);
+  expect(await marcarRetorno(alvo.id, hoje)).toEqual({ erro: null });
+});
+
 test("data no passado é recusada com instrução", async () => {
   const alvo = (await buscarPacientesParaContatar()).paraContatar[0];
   const r = await marcarRetorno(alvo.id, "2020-01-01");

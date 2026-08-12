@@ -5,7 +5,7 @@ import { fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { tentarCriarEventoConsulta } from "@/lib/google-calendar";
-import { FUSO } from "@/lib/recall";
+import { diasDesde, FUSO } from "@/lib/recall";
 
 const id = z.string().min(1).max(64);
 
@@ -25,7 +25,9 @@ export async function marcarRetorno(pacienteId: string, data: string) {
   // Meio-dia de Brasília: o sistema não é agenda de horários, só precisa cair no dia certo.
   const dataHora = fromZonedTime(`${dia}T12:00:00`, FUSO);
 
-  if (dataHora < new Date()) {
+  // Dia de calendário, não timestamp: "hoje" vale o dia inteiro, mesmo
+  // depois do meio-dia (hora em que a consulta é gravada).
+  if (diasDesde(dataHora) > 0) {
     return { erro: "Essa data já passou. Escolha hoje ou uma data futura." };
   }
 
