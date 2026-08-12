@@ -1,4 +1,6 @@
+import { fromZonedTime } from "date-fns-tz";
 import { db } from "./db";
+import { FUSO } from "./recall";
 
 export type EventoGoogleCalendar = {
   id: string;
@@ -78,10 +80,13 @@ export async function sincronizarGoogleAgenda() {
     if (evento.status === "cancelled" || !evento.start) continue;
 
     const textoEvento = `${evento.summary || ""} ${evento.description || ""}`.toLowerCase();
-    const dataHoraStr = evento.start.dateTime || evento.start.date;
-    if (!dataHoraStr) continue;
+    if (!evento.start.dateTime && !evento.start.date) continue;
 
-    const dataHora = new Date(dataHoraStr);
+    // Evento de dia inteiro não tem hora: meio-dia de Brasília, como o resto
+    // do sistema — meia-noite UTC cairia no dia anterior no fuso local.
+    const dataHora = evento.start.dateTime
+      ? new Date(evento.start.dateTime)
+      : fromZonedTime(`${evento.start.date}T12:00:00`, FUSO);
 
     // Tenta encontrar o paciente pelo nome ou telefone no título/descrição do evento
     const pacienteEncontrado = pacientes.find((p) => {
