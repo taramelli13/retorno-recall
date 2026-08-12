@@ -13,6 +13,8 @@ export type CardProps = {
   atraso: number;
   intervaloDias: number;
   hoje: string;
+  /** presente = já contatado, aguardando resposta (0 = hoje) */
+  diasDesdeContato?: number;
 };
 
 function prazoEmTexto(atraso: number) {
@@ -69,6 +71,7 @@ export function CardPaciente(p: CardProps) {
   const [marcando, setMarcando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const vencido = p.atraso > 0;
+  const aguardando = p.diasDesdeContato !== undefined;
 
   const acao = (fn: () => Promise<{ erro: string | null } | void>) =>
     iniciar(async () => {
@@ -81,7 +84,11 @@ export function CardPaciente(p: CardProps) {
       className={`cartao overflow-hidden ${pendente ? "opacity-50" : ""}`}
     >
       {/* faixa de estado: dá pra ver o cartão certo sem ler nada */}
-      <div className={`h-1 w-full ${vencido ? "bg-vencido" : "bg-a-vencer"}`} />
+      <div
+        className={`h-1 w-full ${
+          aguardando ? "bg-traco" : vencido ? "bg-vencido" : "bg-a-vencer"
+        }`}
+      />
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
@@ -112,24 +119,32 @@ export function CardPaciente(p: CardProps) {
           </div>
         </div>
 
+        {aguardando && (
+          <p className="mt-3 font-mono text-xs text-suave">
+            mensagem enviada{" "}
+            {p.diasDesdeContato === 0 ? "hoje" : `há ${p.diasDesdeContato}d`}
+            {" — "}sem retorno marcado
+          </p>
+        )}
+
         <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMarcando((v) => !v)}
+            aria-expanded={marcando}
+            className={aguardando ? "btn-primario order-first" : "btn-suave"}
+          >
+            Marcar retorno
+          </button>
           <a
             href={linkWhatsApp(p.telefone, p.nome, p.diasSemVir)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => acao(() => registrarContato(p.id, "ENVIADO"))}
-            className="btn-primario"
+            className={aguardando ? "btn-suave" : "btn-primario order-first"}
           >
             Falar no WhatsApp
           </a>
-          <button
-            type="button"
-            onClick={() => setMarcando((v) => !v)}
-            aria-expanded={marcando}
-            className="btn-suave"
-          >
-            Marcar retorno
-          </button>
           <button
             type="button"
             onClick={() => acao(() => registrarContato(p.id, "SEM_RESPOSTA"))}

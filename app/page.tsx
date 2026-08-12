@@ -7,10 +7,10 @@ import { buscarPacientesParaContatar, diasDesde, FUSO } from "@/lib/recall";
 export const dynamic = "force-dynamic";
 
 export default async function Hoje() {
-  const pacientes = await buscarPacientesParaContatar();
+  const { paraContatar, aguardando } = await buscarPacientesParaContatar();
   const agora = new Date();
   const hoje = formatInTimeZone(agora, FUSO, "yyyy-MM-dd");
-  const atrasadas = pacientes.filter((p) => diasDesde(p.venceEm, agora) > 0).length;
+  const atrasadas = paraContatar.filter((p) => diasDesde(p.venceEm, agora) > 0).length;
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
@@ -26,7 +26,7 @@ export default async function Hoje() {
         </Link>
       </header>
 
-      {pacientes.length === 0 ? (
+      {paraContatar.length === 0 && aguardando.length === 0 ? (
         <div className="cartao p-8 text-center">
           <p className="font-display text-xl">Tudo em dia.</p>
           <p className="mt-1 text-sm text-suave text-balance">
@@ -35,34 +35,65 @@ export default async function Hoje() {
         </div>
       ) : (
         <>
-          <div className="mb-4 flex items-baseline gap-4 font-mono text-xs text-suave">
-            <span>
-              <strong className="font-display text-2xl font-semibold text-tinta">
-                {pacientes.length}
-              </strong>{" "}
-              para contatar
-            </span>
-            {atrasadas > 0 && (
-              <span className="selo bg-vencido/10 text-vencido">
-                {atrasadas} atrasada{atrasadas > 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
+          {paraContatar.length === 0 ? (
+            <p className="cartao p-6 text-center text-sm text-suave">
+              Ninguém novo para contatar.
+            </p>
+          ) : (
+            <>
+              <div className="mb-4 flex items-baseline gap-4 font-mono text-xs text-suave">
+                <span>
+                  <strong className="font-display text-2xl font-semibold text-tinta">
+                    {paraContatar.length}
+                  </strong>{" "}
+                  para contatar
+                </span>
+                {atrasadas > 0 && (
+                  <span className="selo bg-vencido/10 text-vencido">
+                    {atrasadas} atrasada{atrasadas > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
 
-          <ul className="flex flex-col gap-3">
-            {pacientes.map((p) => (
-              <CardPaciente
-                key={p.id}
-                id={p.id}
-                nome={p.nome}
-                telefone={p.telefone}
-                intervaloDias={p.intervaloDias}
-                diasSemVir={diasDesde(p.ultimaConsulta, agora)}
-                atraso={diasDesde(p.venceEm, agora)}
-                hoje={hoje}
-              />
-            ))}
-          </ul>
+              <ul className="flex flex-col gap-3">
+                {paraContatar.map((p) => (
+                  <CardPaciente
+                    key={p.id}
+                    id={p.id}
+                    nome={p.nome}
+                    telefone={p.telefone}
+                    intervaloDias={p.intervaloDias}
+                    diasSemVir={diasDesde(p.ultimaConsulta, agora)}
+                    atraso={diasDesde(p.venceEm, agora)}
+                    hoje={hoje}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
+
+          {aguardando.length > 0 && (
+            <>
+              <h2 className="titulo-secao mt-8 mb-3">
+                Aguardando resposta ({aguardando.length})
+              </h2>
+              <ul className="flex flex-col gap-3">
+                {aguardando.map((p) => (
+                  <CardPaciente
+                    key={p.id}
+                    id={p.id}
+                    nome={p.nome}
+                    telefone={p.telefone}
+                    intervaloDias={p.intervaloDias}
+                    diasSemVir={diasDesde(p.ultimaConsulta, agora)}
+                    atraso={diasDesde(p.venceEm, agora)}
+                    hoje={hoje}
+                    diasDesdeContato={diasDesde(p.ultimoContato!, agora)}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
         </>
       )}
     </main>

@@ -26,20 +26,29 @@ O sistema resolve um problema só: lembrar quem precisa remarcar.
 ## A regra de negócio
 
 É a parte que precisa estar certa antes de qualquer interface. Um paciente entra na
-lista de hoje quando todas as cinco condições valem:
+tela de hoje quando quatro condições valem:
 
 1. está ativo;
 2. tem ao menos uma consulta realizada;
 3. `última consulta + intervalo de retorno` já venceu ou vence nos próximos 7 dias;
-4. não existe consulta agendada no futuro;
-5. não houve contato nos últimos 5 dias.
+4. não existe consulta agendada no futuro.
 
-As condições 1 a 3 são óbvias. As condições 4 e 5 são o que separa uma lista útil de uma
-lista que mente: sem elas, o sistema me faz cobrar na segunda alguém que já remarcou na
-sexta, e cobrar de novo na quarta. Duas mensagens repetidas e eu paro de confiar na
-lista, e a partir daí o sistema não serve mais pra nada.
+A quinta condição — houve contato nos últimos 5 dias? — não tira ninguém da tela: ela
+decide em qual das duas listas o paciente aparece. Sem contato recente, ele está em
+**para contatar**, com o botão de WhatsApp em destaque. Com contato recente, ele desce
+para **aguardando resposta**, onde o botão principal é marcar o retorno; ele só sai da
+tela quando a consulta é agendada. Se os 5 dias passam sem resposta e sem consulta, ele
+volta para o topo.
 
-As cinco condições são uma pergunta só, então são uma query só ([`lib/recall.ts`](lib/recall.ts)):
+As condições 4 e 5 são o que separa uma lista útil de uma lista que mente: sem elas, o
+sistema me faz cobrar na segunda alguém que já remarcou na sexta, e cobrar de novo na
+quarta. Duas mensagens repetidas e eu paro de confiar na lista, e a partir daí o sistema
+não serve mais pra nada. E a seção de aguardando existe porque mandar a mensagem não
+encerra o caso: enquanto a consulta não está marcada, o paciente continua na minha
+frente — só que sem risco de eu mandar mensagem duplicada.
+
+As condições são uma pergunta só, então são uma query só ([`lib/recall.ts`](lib/recall.ts)),
+e o corte dos 5 dias separa as duas listas logo depois:
 
 ```sql
 WITH ultima AS (
@@ -51,7 +60,9 @@ WITH ultima AS (
 )
 SELECT p.id, p.nome, p.telefone, p."intervaloDias",
        u.data AS "ultimaConsulta",
-       u.data + (p."intervaloDias" || ' days')::interval AS "venceEm"
+       u.data + (p."intervaloDias" || ' days')::interval AS "venceEm",
+       (SELECT MAX(ct.data) FROM "Contato" ct WHERE ct."pacienteId" = p.id)
+         AS "ultimoContato"
 FROM "Paciente" p
 JOIN ultima u ON u."pacienteId" = p.id
 WHERE p.ativo
@@ -59,10 +70,6 @@ WHERE p.ativo
   AND NOT EXISTS (
     SELECT 1 FROM "Consulta" c
     WHERE c."pacienteId" = p.id AND c.status = 'AGENDADA' AND c."dataHora" > NOW()
-  )
-  AND NOT EXISTS (
-    SELECT 1 FROM "Contato" ct
-    WHERE ct."pacienteId" = p.id AND ct.data > NOW() - INTERVAL '5 days'
   )
 ORDER BY "venceEm" ASC, p.nome ASC;
 ```

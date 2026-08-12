@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { db } from "@/lib/db";
-import { FUSO } from "@/lib/recall";
+import { diasDesde, FUSO } from "@/lib/recall";
 import { formatarTelefone } from "@/lib/mensagem";
 import {
   atualizarPaciente,
@@ -10,6 +10,7 @@ import {
   registrarConsulta,
 } from "../actions";
 import { FormularioPaciente } from "../formulario-paciente";
+import { BotaoWhatsApp } from "./botao-whatsapp";
 import { RegistrarConsulta } from "./registrar-consulta";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,12 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
   });
   if (!paciente) notFound();
 
-  const hoje = formatInTimeZone(new Date(), FUSO, "yyyy-MM-dd");
+  const agora = new Date();
+  const hoje = formatInTimeZone(agora, FUSO, "yyyy-MM-dd");
+  // mesma regra do recall: realizada com data futura é erro de digitação, ignorar
+  const ultimaRealizada = paciente.consultas.find(
+    (c) => c.status === "REALIZADA" && c.dataHora <= agora,
+  );
 
   const historico = [
     ...paciente.consultas.map((c) => ({
@@ -83,6 +89,14 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
           acao={registrarConsulta.bind(null, paciente.id)}
           hoje={hoje}
         />
+        {ultimaRealizada && (
+          <BotaoWhatsApp
+            id={paciente.id}
+            nome={paciente.nome}
+            telefone={paciente.telefone}
+            dias={diasDesde(ultimaRealizada.dataHora, agora)}
+          />
+        )}
       </div>
 
       <h2 className="titulo-secao mt-8 mb-2">Histórico</h2>
