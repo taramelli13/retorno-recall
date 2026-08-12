@@ -3,7 +3,7 @@ import { db } from "../lib/db";
 import { buscarPacientesParaContatar, diasDesde, FUSO } from "../lib/recall";
 
 async function main() {
-  const pacientes = await buscarPacientesParaContatar();
+  const { paraContatar: pacientes } = await buscarPacientesParaContatar();
 
   if (pacientes.length === 0) {
     console.log("\nNinguém para contatar hoje. Está tudo em dia.\n");

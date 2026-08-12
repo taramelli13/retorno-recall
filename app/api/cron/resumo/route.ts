@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   const endereco = process.env.APP_URL ?? new URL(request.url).origin;
   const agora = new Date();
   await tentarSincronizarGoogleAgenda();
-  const pacientes = await buscarPacientesParaContatar();
+  const { paraContatar: pacientes } = await buscarPacientesParaContatar();
 
   if (!chave || !para) {
     return Response.json({
