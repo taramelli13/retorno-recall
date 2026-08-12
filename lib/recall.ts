@@ -1,4 +1,4 @@
-import { differenceInCalendarDays } from "date-fns";
+import { differenceInCalendarDays, subDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { db } from "./db";
 
@@ -16,15 +16,19 @@ export type PacienteParaContatar = {
   intervaloDias: number;
   ultimaConsulta: Date;
   venceEm: Date;
+  ultimoContato: Date | null;
 };
 
 /**
- * A lista de hoje. Um paciente entra quando as cinco condições valem:
- * ativo, tem realizada, vencimento em até 7 dias, sem agendada futura,
- * sem contato nos últimos 5 dias. Ordenado do mais atrasado para o menos.
+ * A lista de hoje. Um paciente entra quando as quatro condições valem:
+ * ativo, tem realizada, vencimento em até 7 dias, sem agendada futura.
+ * A quinta condição (contato nos últimos 5 dias) não esconde mais ninguém:
+ * ela separa "para contatar" de "aguardando resposta" — quem foi contatado
+ * só sai da tela quando a consulta é agendada. Ordenado do mais atrasado
+ * para o menos.
  */
-export function buscarPacientesParaContatar() {
-  return db.$queryRaw<PacienteParaContatar[]>`
+export async function buscarPacientesParaContatar() {
+  const pacientes = await db.$queryRaw<PacienteParaContatar[]>`
     WITH ultima AS (
       SELECT "pacienteId", MAX("dataHora") AS data
       -- data futura em consulta realizada é erro de digitação: ignorar, para
@@ -34,7 +38,9 @@ export function buscarPacientesParaContatar() {
     )
     SELECT p.id, p.nome, p.telefone, p."intervaloDias",
            u.data AS "ultimaConsulta",
-           u.data + (p."intervaloDias" || ' days')::interval AS "venceEm"
+           u.data + (p."intervaloDias" || ' days')::interval AS "venceEm",
+           (SELECT MAX(ct.data) FROM "Contato" ct WHERE ct."pacienteId" = p.id)
+             AS "ultimoContato"
     FROM "Paciente" p
     JOIN ultima u ON u."pacienteId" = p.id
     WHERE p.ativo
@@ -43,10 +49,12 @@ export function buscarPacientesParaContatar() {
         SELECT 1 FROM "Consulta" c
         WHERE c."pacienteId" = p.id AND c.status = 'AGENDADA' AND c."dataHora" > NOW()
       )
-      AND NOT EXISTS (
-        SELECT 1 FROM "Contato" ct
-        WHERE ct."pacienteId" = p.id AND ct.data > NOW() - INTERVAL '5 days'
-      )
     ORDER BY "venceEm" ASC, p.nome ASC;
   `;
+
+  const corte = subDays(new Date(), 5);
+  return {
+    paraContatar: pacientes.filter((p) => !p.ultimoContato || p.ultimoContato <= corte),
+    aguardando: pacientes.filter((p) => p.ultimoContato && p.ultimoContato > corte),
+  };
 }

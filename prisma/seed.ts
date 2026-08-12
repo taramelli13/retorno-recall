@@ -19,6 +19,8 @@ type Caso = {
   contatos?: { data: Date; resultado?: ResultadoContato }[];
   /** verdade esperada da regra central — os testes da Fase 1 leem daqui */
   aparece: boolean;
+  /** contatado há menos de 5 dias: entra em "aguardando resposta" */
+  aguarda?: boolean;
   porque: string;
 };
 
@@ -60,7 +62,8 @@ export const CASOS: Caso[] = [
     consultas: [{ dataHora: ha(60), status: "REALIZADA" }],
     contatos: [{ data: ha(1) }],
     aparece: false,
-    porque: "vencido, mas contatada ontem",
+    aguarda: true,
+    porque: "contatada ontem — aguardando resposta, some só quando agendar",
   },
   {
     nome: "Gabriela Souza",

@@ -16,6 +16,7 @@ export async function registrarContato(
     data: { pacienteId: id.parse(pacienteId), resultado },
   });
   revalidatePath("/");
+  revalidatePath(`/pacientes/${pacienteId}`);
 }
 
 export async function marcarRetorno(pacienteId: string, data: string) {
