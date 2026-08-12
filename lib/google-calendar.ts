@@ -1,4 +1,4 @@
-import { addDays } from "date-fns";
+import { addDays, addHours } from "date-fns";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { db } from "./db";
 import { FUSO } from "./recall";
@@ -124,7 +124,8 @@ export async function sincronizarGoogleAgenda() {
 
 /**
  * Cria o evento no Google Agenda quando uma consulta é marcada no app.
- * Evento de dia inteiro: o sistema só guarda o dia, não o horário.
+ * Com horário definido, o evento dura 1h; sem horário, é de dia inteiro.
+ * Lembretes do Google: 1 dia e 1 hora antes.
  * Melhor esforço: sem credenciais ou com erro no Google, a consulta
  * continua salva no banco — o evento é conveniência, não fonte de verdade.
  */
@@ -132,12 +133,20 @@ export async function tentarCriarEventoConsulta(
   consultaId: string,
   nomePaciente: string,
   dataHora: Date,
+  comHorario = false,
 ) {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_REFRESH_TOKEN) return;
   try {
     const token = await obterAccessTokenGoogle();
     const dia = formatInTimeZone(dataHora, FUSO, "yyyy-MM-dd");
     const diaSeguinte = formatInTimeZone(addDays(dataHora, 1), FUSO, "yyyy-MM-dd");
+
+    const periodo = comHorario
+      ? {
+          start: { dateTime: dataHora.toISOString(), timeZone: FUSO },
+          end: { dateTime: addHours(dataHora, 1).toISOString(), timeZone: FUSO },
+        }
+      : { start: { date: dia }, end: { date: diaSeguinte } };
 
     const response = await fetch(
       "https://www.googleapis.com/calendar/v3/calendars/primary/events",
@@ -149,8 +158,14 @@ export async function tentarCriarEventoConsulta(
         },
         body: JSON.stringify({
           summary: `Consulta — ${nomePaciente}`,
-          start: { date: dia },
-          end: { date: diaSeguinte },
+          ...periodo,
+          reminders: {
+            useDefault: false,
+            overrides: [
+              { method: "popup", minutes: 24 * 60 },
+              { method: "popup", minutes: 60 },
+            ],
+          },
         }),
       },
     );

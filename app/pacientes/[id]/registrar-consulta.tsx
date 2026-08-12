@@ -38,6 +38,14 @@ export function RegistrarConsulta({
         />
       </label>
       <label className="flex flex-col gap-1">
+        <span className="titulo-secao">Horário</span>
+        <input
+          name="hora"
+          type="time"
+          className="campo font-mono text-sm"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
         <span className="titulo-secao">Status</span>
         <select
           name="status"

@@ -156,9 +156,15 @@ export function CardPaciente(p: CardProps) {
 
         {marcando && (
           <form
-            className="mt-3 flex gap-2"
+            className="mt-3 flex flex-wrap gap-2"
             action={(dados) =>
-              acao(() => marcarRetorno(p.id, String(dados.get("data"))))
+              acao(() =>
+                marcarRetorno(
+                  p.id,
+                  String(dados.get("data")),
+                  dados.get("hora") ? String(dados.get("hora")) : undefined,
+                ),
+              )
             }
           >
             <label className="sr-only" htmlFor={`data-${p.id}`}>
@@ -171,6 +177,15 @@ export function CardPaciente(p: CardProps) {
               min={p.hoje}
               defaultValue={p.hoje}
               required
+              className="campo font-mono text-sm"
+            />
+            <label className="sr-only" htmlFor={`hora-${p.id}`}>
+              Horário do retorno de {p.nome} (opcional)
+            </label>
+            <input
+              id={`hora-${p.id}`}
+              name="hora"
+              type="time"
               className="campo font-mono text-sm"
             />
             <button type="submit" className="btn-escuro shrink-0">

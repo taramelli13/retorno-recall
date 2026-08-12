@@ -74,6 +74,10 @@ export async function atualizarPaciente(
 
 const consultaSchema = z.object({
   data: z.iso.date(),
+  hora: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .optional(),
   status: z.enum(["AGENDADA", "REALIZADA", "FALTOU", "CANCELADA"]),
   notas: z.string().trim().max(500).optional(),
 });
@@ -85,12 +89,13 @@ export async function registrarConsulta(
 ): Promise<Resultado> {
   const r = consultaSchema.safeParse({
     data: dados.get("data"),
+    hora: dados.get("hora") || undefined,
     status: dados.get("status"),
     notas: dados.get("notas") || undefined,
   });
   if (!r.success) return { erro: primeiroErro(r.error) };
 
-  const dataHora = fromZonedTime(`${r.data.data}T12:00:00`, FUSO);
+  const dataHora = fromZonedTime(`${r.data.data}T${r.data.hora ?? "12:00"}:00`, FUSO);
   const consulta = await db.consulta.create({
     data: {
       pacienteId: id.parse(pacienteId),
@@ -102,7 +107,12 @@ export async function registrarConsulta(
   });
   // Só agendamento de hoje em diante vira evento; histórico não mexe na agenda.
   if (r.data.status === "AGENDADA" && diasDesde(dataHora) <= 0) {
-    await tentarCriarEventoConsulta(consulta.id, consulta.paciente.nome, dataHora);
+    await tentarCriarEventoConsulta(
+      consulta.id,
+      consulta.paciente.nome,
+      dataHora,
+      !!r.data.hora,
+    );
   }
   revalidatePath("/");
   revalidatePath(`/pacientes/${pacienteId}`);

@@ -4,8 +4,10 @@ import { beforeAll, expect, test, vi } from "vitest";
 // revalidatePath só existe dentro de uma requisição do Next.
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
+import { formatInTimeZone } from "date-fns-tz";
 import { semear } from "../prisma/seed";
-import { buscarPacientesParaContatar } from "@/lib/recall";
+import { db } from "@/lib/db";
+import { buscarPacientesParaContatar, FUSO } from "@/lib/recall";
 import { linkWhatsApp } from "@/lib/mensagem";
 import { marcarRetorno, registrarContato } from "./actions";
 
@@ -50,6 +52,17 @@ test("marcar retorno para hoje funciona em qualquer horário", async () => {
   const alvo = (await buscarPacientesParaContatar()).paraContatar[0];
   const hoje = new Date().toISOString().slice(0, 10);
   expect(await marcarRetorno(alvo.id, hoje)).toEqual({ erro: null });
+});
+
+test("marcar retorno com horário grava a hora em Brasília", async () => {
+  const alvo = (await buscarPacientesParaContatar()).paraContatar[0];
+  const amanha = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  expect(await marcarRetorno(alvo.id, amanha, "15:30")).toEqual({ erro: null });
+  const consulta = await db.consulta.findFirstOrThrow({
+    where: { pacienteId: alvo.id, status: "AGENDADA" },
+    orderBy: { dataHora: "desc" },
+  });
+  expect(formatInTimeZone(consulta.dataHora, FUSO, "HH:mm")).toBe("15:30");
 });
 
 test("data no passado é recusada com instrução", async () => {
