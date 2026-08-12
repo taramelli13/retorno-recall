@@ -3,12 +3,10 @@ import { formatInTimeZone } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
 import { CardPaciente } from "./card-paciente";
 import { buscarPacientesParaContatar, diasDesde, FUSO } from "@/lib/recall";
-import { tentarSincronizarGoogleAgenda } from "@/lib/google-calendar";
 
 export const dynamic = "force-dynamic";
 
 export default async function Hoje() {
-  await tentarSincronizarGoogleAgenda();
   const { paraContatar, aguardando } = await buscarPacientesParaContatar();
   const agora = new Date();
   const hoje = formatInTimeZone(agora, FUSO, "yyyy-MM-dd");

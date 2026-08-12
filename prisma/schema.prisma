@@ -20,17 +20,15 @@ model Paciente {
 }
 
 model Consulta {
-  id            String         @id @default(cuid())
-  pacienteId    String
-  dataHora      DateTime
-  status        StatusConsulta @default(AGENDADA)
-  googleEventId String?        @unique
-  notas         String?
-  paciente      Paciente       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  id         String         @id @default(cuid())
+  pacienteId String
+  dataHora   DateTime
+  status     StatusConsulta @default(AGENDADA)
+  notas      String?
+  paciente   Paciente       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
 
   @@index([pacienteId, dataHora])
 }
-
 
 model Contato {
   id         String           @id @default(cuid())
