@@ -2,6 +2,7 @@
 
 import { registrarContato } from "@/app/actions";
 import { linkWhatsApp } from "@/lib/mensagem";
+import { IconWhatsApp } from "@/app/components/icons";
 
 export function BotaoWhatsApp(p: {
   id: string;
@@ -15,9 +16,10 @@ export function BotaoWhatsApp(p: {
       target="_blank"
       rel="noopener noreferrer"
       onClick={() => registrarContato(p.id, "ENVIADO")}
-      className="btn-suave"
+      className="btn-whatsapp"
     >
-      Falar no WhatsApp
+      <IconWhatsApp className="size-4" />
+      <span>Falar no WhatsApp</span>
     </a>
   );
 }

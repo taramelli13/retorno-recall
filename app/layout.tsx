@@ -1,33 +1,38 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import { HeaderNav } from "./components/header";
 import "./globals.css";
 
-const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"] });
-
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Retorno",
-  description: "Quem precisa remarcar consulta hoje",
+  title: "Retorno — Recall de Pacientes",
+  description: "Sistema de acompanhamento e recall de pacientes para consultório de nutrição",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="pt-BR"
-      className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        {/* Aplica o tema salvo antes do primeiro paint, para não piscar claro→escuro */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(localStorage.tema==="dark"||(!localStorage.tema&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")`,
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col bg-fundo text-tinta">
+        <HeaderNav />
+        <div className="flex-1">{children}</div>
+        <footer className="w-full border-t py-6 text-center text-xs text-muted-foreground">
+          <p>© Retorno — Sistema de Recall & Acompanhamento de Pacientes</p>
+        </footer>
+      </body>
     </html>
   );
 }
