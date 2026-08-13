@@ -9,6 +9,7 @@ import { tentarCriarEventoConsulta } from "@/lib/google-calendar";
 import { diasDesde, FUSO } from "@/lib/recall";
 import { analisarCsv } from "@/lib/csv";
 import { pacienteSchema, primeiroErro } from "@/lib/paciente";
+import { consultaSchema, notasSchema } from "@/lib/consulta";
 
 export type Resultado = { erro: string | null };
 
@@ -71,16 +72,6 @@ export async function atualizarPaciente(
   revalidatePath(`/pacientes/${pacienteId}`);
   return { erro: null };
 }
-
-const consultaSchema = z.object({
-  data: z.iso.date(),
-  hora: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
-    .optional(),
-  status: z.enum(["AGENDADA", "REALIZADA", "FALTOU", "CANCELADA"]),
-  notas: z.string().trim().max(500).optional(),
-});
 
 export async function registrarConsulta(
   pacienteId: string,
@@ -158,4 +149,37 @@ export async function importarPacientes(
     erro: erros.length ? erros.join(" ") : null,
     resumo: `${validos.length} paciente(s) importado(s).`,
   };
+}
+
+/** Arquivar = sair das listas sem apagar nada. Reversível com um clique. */
+export async function definirAtivo(pacienteId: string, ativo: boolean) {
+  await db.paciente.update({
+    where: { id: id.parse(pacienteId) },
+    data: { ativo },
+  });
+  revalidatePath("/");
+  revalidatePath("/pacientes");
+  revalidatePath(`/pacientes/${pacienteId}`);
+}
+
+export async function atualizarNotasConsulta(
+  pacienteId: string,
+  _anterior: Resultado,
+  dados: FormData,
+): Promise<Resultado> {
+  const rId = id.safeParse(dados.get("consultaId"));
+  if (!rId.success) return { erro: "Consulta não encontrada." };
+
+  const r = notasSchema.safeParse(String(dados.get("notas") ?? ""));
+  if (!r.success) return { erro: primeiroErro(r.error) };
+
+  // updateMany com pacienteId no where: consulta de outro paciente não é sua.
+  const { count } = await db.consulta.updateMany({
+    where: { id: rId.data, pacienteId: id.parse(pacienteId) },
+    data: { notas: r.data },
+  });
+  if (count === 0) return { erro: "Consulta não encontrada." };
+
+  revalidatePath(`/pacientes/${pacienteId}`);
+  return { erro: null };
 }

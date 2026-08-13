@@ -64,7 +64,7 @@ export function RegistrarConsulta({
         <span className="titulo-secao">Notas</span>
         <input
           name="notas"
-          maxLength={500}
+          maxLength={5000}
           placeholder="Ex: retorno pós-dieta"
           className="campo text-sm"
         />

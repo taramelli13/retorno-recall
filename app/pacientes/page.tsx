@@ -15,20 +15,27 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function Pacientes({ searchParams }: PageProps<"/pacientes">) {
-  const { q } = await searchParams;
+  const { q, arquivados } = await searchParams;
   const busca = typeof q === "string" ? q.trim() : "";
+  const mostrarArquivados = arquivados === "1";
 
-  const pacientes = await db.paciente.findMany({
-    where: busca ? { nome: { contains: busca, mode: "insensitive" } } : undefined,
-    orderBy: { nome: "asc" },
-    include: {
-      consultas: {
-        where: { status: "REALIZADA" },
-        orderBy: { dataHora: "desc" },
-        take: 1,
+  const [pacientes, totalArquivados] = await Promise.all([
+    db.paciente.findMany({
+      where: {
+        ...(busca ? { nome: { contains: busca, mode: "insensitive" as const } } : {}),
+        ...(mostrarArquivados ? {} : { ativo: true }),
       },
-    },
-  });
+      orderBy: { nome: "asc" },
+      include: {
+        consultas: {
+          where: { status: "REALIZADA" },
+          orderBy: { dataHora: "desc" },
+          take: 1,
+        },
+      },
+    }),
+    db.paciente.count({ where: { ativo: false } }),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-20 pt-6">
@@ -58,6 +65,7 @@ export default async function Pacientes({ searchParams }: PageProps<"/pacientes"
 
       {/* Formulário de Busca */}
       <form className="mb-6 flex gap-2">
+        {mostrarArquivados && <input type="hidden" name="arquivados" value="1" />}
         <div className="relative flex-1">
           <IconSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-suave" />
           <input
@@ -72,6 +80,25 @@ export default async function Pacientes({ searchParams }: PageProps<"/pacientes"
           Buscar
         </button>
       </form>
+
+      {totalArquivados > 0 && (
+        <div className="mb-4 -mt-2 text-right">
+          <Link
+            href={{
+              pathname: "/pacientes",
+              query: {
+                ...(busca ? { q: busca } : {}),
+                ...(mostrarArquivados ? {} : { arquivados: "1" }),
+              },
+            }}
+            className="font-mono text-xs text-suave hover:text-tinta transition-colors underline underline-offset-2"
+          >
+            {mostrarArquivados
+              ? "Ocultar arquivados"
+              : `Mostrar arquivados (${totalArquivados})`}
+          </Link>
+        </div>
+      )}
 
       {/* Lista de Pacientes */}
       {pacientes.length === 0 ? (
