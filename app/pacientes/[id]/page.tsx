@@ -156,10 +156,9 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
             consultaId: e.tipo === "CONSULTA" ? e.consultaId : null,
             // 12:00 é a convenção de "sem horário" — só hora real aparece
             data:
-              formatInTimeZone(e.data, FUSO, "dd/MM/yy") +
-              (formatInTimeZone(e.data, FUSO, "HH:mm") !== "12:00"
-                ? ` ${formatInTimeZone(e.data, FUSO, "HH:mm")}`
-                : ""),
+              formatInTimeZone(e.data, FUSO, "HH:mm") !== "12:00"
+                ? formatInTimeZone(e.data, FUSO, "dd/MM/yy HH:mm")
+                : formatInTimeZone(e.data, FUSO, "dd/MM/yy"),
             titulo: e.titulo,
             notas: e.notas,
             tom:
