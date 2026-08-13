@@ -31,16 +31,24 @@ export function Prontuario({
     entradas.find((e) => e.consultaId)?.consultaId ?? null,
   );
   const [editando, setEditando] = useState(false);
+  const [erroConsultaId, setErroConsultaId] = useState<string | null>(null);
   const [estado, enviar, pendente] = useActionState(
     async (anterior: Resultado, dados: FormData) => {
+      const consultaId = dados.get("consultaId");
       const r = await acao(anterior, dados);
-      if (!r.erro) setEditando(false);
+      if (!r.erro) {
+        setEditando(false);
+        setErroConsultaId(null);
+      } else {
+        setErroConsultaId(typeof consultaId === "string" ? consultaId : null);
+      }
       return r;
     },
     { erro: null },
   );
 
-  const sel = entradas.find((e) => e.consultaId === selecionada) ?? null;
+  const sel =
+    entradas.find((e) => e.consultaId !== null && e.consultaId === selecionada) ?? null;
 
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-6">
@@ -94,6 +102,7 @@ export function Prontuario({
                     onClick={() => {
                       setSelecionada(e.consultaId);
                       setEditando(false);
+                      setErroConsultaId(null);
                     }}
                     className={`flex w-full items-start gap-3 px-5 py-3.5 text-left text-sm transition-colors ${
                       ativa ? "bg-em-dia-suave/60" : "hover:bg-fundo/50"
@@ -147,7 +156,7 @@ export function Prontuario({
                     Cancelar
                   </button>
                 </div>
-                {estado.erro && (
+                {estado.erro && erroConsultaId === sel.consultaId && (
                   <p role="alert" className="mt-2 text-sm text-vencido">
                     {estado.erro}
                   </p>
