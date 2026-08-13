@@ -17,12 +17,9 @@ import { RegistrarConsulta } from "./registrar-consulta";
 import { Prontuario } from "./prontuario";
 import {
   IconArchive,
-  IconCalendar,
   IconPhone,
   IconArrowLeft,
   IconCheck,
-  IconAlertCircle,
-  IconWhatsApp,
 } from "@/app/components/icons";
 
 export const dynamic = "force-dynamic";
