@@ -154,7 +154,12 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
         <Prontuario
           entradas={historico.map((e) => ({
             consultaId: e.tipo === "CONSULTA" ? e.consultaId : null,
-            data: formatInTimeZone(e.data, FUSO, "dd/MM/yy"),
+            // 12:00 é a convenção de "sem horário" — só hora real aparece
+            data:
+              formatInTimeZone(e.data, FUSO, "dd/MM/yy") +
+              (formatInTimeZone(e.data, FUSO, "HH:mm") !== "12:00"
+                ? ` ${formatInTimeZone(e.data, FUSO, "HH:mm")}`
+                : ""),
             titulo: e.titulo,
             notas: e.notas,
             tom:

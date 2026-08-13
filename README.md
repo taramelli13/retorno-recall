@@ -179,6 +179,7 @@ para resolver problema que 30 linhas resolvem.
 |---|---|
 | NextAuth / Auth.js | SHA-256 via `crypto.subtle` + cookie httpOnly, 12 linhas ([`lib/sessao.ts`](lib/sessao.ts)) |
 | SDK da Resend | `fetch` direto na API REST |
+| SDK `googleapis` | `fetch` na API REST do Calendar + OAuth por refresh token ([`lib/google-calendar.ts`](lib/google-calendar.ts)) |
 | Parser de CSV | 34 linhas com `split` e erro numerado por linha ([`lib/csv.ts`](lib/csv.ts)) |
 | libphonenumber | um `Set` com os 67 DDDs brasileiros válidos |
 | Biblioteca de formulário | Server Actions + `useActionState` |
@@ -216,7 +217,7 @@ implementação que a resolvia — e o que continua de fora, continua de fora.
 
 ## Testes
 
-46 testes, integração contra Postgres de verdade, sem mock de banco. A regra de negócio é
+56 testes, integração contra Postgres de verdade, sem mock de banco. A regra de negócio é
 uma query SQL; testá-la contra um mock testaria o mock.
 
 O detalhe que vale mostrar está em [`prisma/seed.ts`](prisma/seed.ts): cada caso do seed
@@ -321,6 +322,7 @@ lib/
   recall.ts                   a regra de negócio, em SQL
   paciente.ts                 normalização e validação de telefone (Zod)
   consulta.ts                 validação do prontuário (limite de 5.000 caracteres)
+  google-calendar.ts          espelha consultas marcadas na Google Agenda (opcional)
   csv.ts                      importação por colagem
   mensagem.ts                 o texto e o link wa.me
   sessao.ts                   selo de sessão (SHA-256)
@@ -343,6 +345,6 @@ npm run dev
 ```
 
 ```bash
-npm test                      # 46 testes (precisa de banco)
+npm test                      # 56 testes (precisa de banco)
 npm run recall                # imprime a lista de hoje no terminal
 ```

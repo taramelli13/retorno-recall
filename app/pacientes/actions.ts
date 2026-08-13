@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { FUSO } from "@/lib/recall";
+import { tentarCriarEventoConsulta } from "@/lib/google-calendar";
+import { diasDesde, FUSO } from "@/lib/recall";
 import { analisarCsv } from "@/lib/csv";
 import { pacienteSchema, primeiroErro } from "@/lib/paciente";
 import { consultaSchema, notasSchema } from "@/lib/consulta";
@@ -79,19 +80,31 @@ export async function registrarConsulta(
 ): Promise<Resultado> {
   const r = consultaSchema.safeParse({
     data: dados.get("data"),
+    hora: dados.get("hora") || undefined,
     status: dados.get("status"),
     notas: dados.get("notas") || undefined,
   });
   if (!r.success) return { erro: primeiroErro(r.error) };
 
-  await db.consulta.create({
+  const dataHora = fromZonedTime(`${r.data.data}T${r.data.hora ?? "12:00"}:00`, FUSO);
+  const consulta = await db.consulta.create({
     data: {
       pacienteId: id.parse(pacienteId),
-      dataHora: fromZonedTime(`${r.data.data}T12:00:00`, FUSO),
+      dataHora,
       status: r.data.status,
       notas: r.data.notas ?? null,
     },
+    include: { paciente: { select: { nome: true } } },
   });
+  // Só agendamento de hoje em diante vira evento; histórico não mexe na agenda.
+  if (r.data.status === "AGENDADA" && diasDesde(dataHora) <= 0) {
+    await tentarCriarEventoConsulta(
+      consulta.id,
+      consulta.paciente.nome,
+      dataHora,
+      !!r.data.hora,
+    );
+  }
   revalidatePath("/");
   revalidatePath(`/pacientes/${pacienteId}`);
   return { erro: null };
