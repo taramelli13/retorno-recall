@@ -165,7 +165,7 @@ export function Prontuario({
             ) : (
               <>
                 {sel.notas ? (
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-tinta">
+                  <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-tinta">
                     {sel.notas}
                   </p>
                 ) : (
