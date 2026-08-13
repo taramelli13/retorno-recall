@@ -137,3 +137,14 @@ export async function importarPacientes(
     resumo: `${validos.length} paciente(s) importado(s).`,
   };
 }
+
+/** Arquivar = sair das listas sem apagar nada. Reversível com um clique. */
+export async function definirAtivo(pacienteId: string, ativo: boolean) {
+  await db.paciente.update({
+    where: { id: id.parse(pacienteId) },
+    data: { ativo },
+  });
+  revalidatePath("/");
+  revalidatePath("/pacientes");
+  revalidatePath(`/pacientes/${pacienteId}`);
+}

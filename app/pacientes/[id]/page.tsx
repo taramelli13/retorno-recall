@@ -7,12 +7,14 @@ import { formatarTelefone } from "@/lib/mensagem";
 import {
   atualizarPaciente,
   consultaRealizadaHoje,
+  definirAtivo,
   registrarConsulta,
 } from "../actions";
 import { FormularioPaciente } from "../formulario-paciente";
 import { BotaoWhatsApp } from "./botao-whatsapp";
 import { RegistrarConsulta } from "./registrar-consulta";
 import {
+  IconArchive,
   IconCalendar,
   IconClock,
   IconPhone,
@@ -134,6 +136,16 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
               dias={diasDesde(ultimaRealizada.dataHora, agora)}
             />
           )}
+
+          <form
+            action={definirAtivo.bind(null, paciente.id, !paciente.ativo)}
+            className="ml-auto"
+          >
+            <button type="submit" className="btn-suave">
+              <IconArchive className="size-4" />
+              <span>{paciente.ativo ? "Arquivar" : "Reativar"}</span>
+            </button>
+          </form>
         </div>
       </section>
 
