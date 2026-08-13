@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { FUSO } from "@/lib/recall";
 import { analisarCsv } from "@/lib/csv";
 import { pacienteSchema, primeiroErro } from "@/lib/paciente";
+import { consultaSchema } from "@/lib/consulta";
 
 export type Resultado = { erro: string | null };
 
@@ -70,12 +71,6 @@ export async function atualizarPaciente(
   revalidatePath(`/pacientes/${pacienteId}`);
   return { erro: null };
 }
-
-const consultaSchema = z.object({
-  data: z.iso.date(),
-  status: z.enum(["AGENDADA", "REALIZADA", "FALTOU", "CANCELADA"]),
-  notas: z.string().trim().max(500).optional(),
-});
 
 export async function registrarConsulta(
   pacienteId: string,
