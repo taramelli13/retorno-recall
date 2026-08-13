@@ -6,7 +6,7 @@ Sou nutricionista e escrevi isso para resolver um problema meu: é a minha lista
 às 8h da manhã. No ar, em uso real, com cerca de 30 pacientes ativos. A URL não é
 divulgada: o sistema guarda dado de saúde e o acesso é de uma pessoa só, eu.
 
-`Next.js 16` · `TypeScript` · `PostgreSQL` · `Prisma` · `Tailwind 4` · `Vitest` · `Vercel`
+`Next.js 16` · `TypeScript` · `PostgreSQL` · `Prisma` · `Tailwind 4` · `shadcn/ui` · `Vitest` · `Vercel`
 
 ---
 
@@ -99,10 +99,18 @@ varro a lista sem ler número nenhum, e o tamanho do transbordo é literalmente 
 que importa. Repare no terceiro: o ciclo dela é de 15 dias, não 30, e a barra é
 proporcional ao intervalo de cada paciente, não a uma escala fixa.
 
+Os contadores do topo são filtros: tocar em "atrasadas" reduz a lista a quem já passou
+do prazo, e o filtro vive na URL (`/?filtro=atrasadas`) — a tela continua sendo um
+Server Component, sem estado de cliente. Há modo escuro, porque às 8h da manhã de
+inverno a tela clara incomoda de verdade.
+
 A ficha junta consultas e contatos numa linha do tempo só, porque a pergunta que eu faço
 olhando pra ela é sempre "o que aconteceu com essa pessoa, em ordem":
 
 <img src="docs/ficha.png" width="360" alt="Ficha de paciente com histórico misturando consultas realizadas e tentativas de contato sem resposta">
+
+Ao lado do histórico, cada consulta realizada aceita uma anotação de prontuário — sobre
+isso, mais abaixo, porque essa feature quase não entrou.
 
 O botão de WhatsApp abre a conversa com o texto pré-preenchido e grava o contato no mesmo
 clique. É isso que faz o paciente sumir da lista quando eu volto pro app, sem checkbox e
@@ -158,10 +166,14 @@ Número que começa com `+` e código de país diferente de 55 passa como está,
 pelo comprimento E.164, porque duas pacientes minhas moram fora do Brasil. Carregar uma
 tabela de numeração de 200 países por causa de duas pessoas não se paga.
 
-### Oito dependências de runtime
+### Dependências: cada uma com um porquê
 
-`next`, `react`, `react-dom`, `@prisma/client`, `@prisma/adapter-pg`, `zod`, `date-fns`,
-`date-fns-tz`. Só isso.
+O projeto nasceu com oito dependências de runtime e ganhou mais algumas quando o visual
+migrou para shadcn/ui (`@base-ui/react`, `class-variance-authority`, `clsx`,
+`tailwind-merge`, `lucide-react`) — uma troca consciente: componentes copiados para o
+repositório em vez de uma UI kit em `node_modules`, e uma biblioteca de ícones no lugar
+de SVGs desenhados à mão. O que continua valendo é o critério: nenhuma dependência entra
+para resolver problema que 30 linhas resolvem.
 
 | Em vez de | Foi feito com |
 |---|---|
@@ -177,12 +189,34 @@ sessões, provedores OAuth e superfície de ataque que não existe aqui.
 
 ### Server Components por padrão
 
-Quatro componentes de cliente no app inteiro, exatamente onde há interação real: o card
-da tela Hoje, e três formulários. Todo o resto renderiza no servidor.
+Oito componentes de cliente no app inteiro, exatamente onde há interação real: o card
+da tela Hoje, o painel de prontuário, o alternador de tema e cinco formulários e botões.
+Todo o resto — incluindo a tela Hoje inteira e seus filtros — renderiza no servidor.
+
+## O escopo que mudou de ideia (e como)
+
+A primeira versão deste README dizia "não é prontuário eletrônico", e o sistema rodou
+meses assim. Depois o uso real mostrou uma dor específica: ao ligar para um paciente, eu
+precisava lembrar o que tinha acontecido na última consulta, e essa informação estava num
+caderno. Entraram duas features, com o escopo deliberadamente estreito
+([spec e plano versionados em `docs/superpowers/`](docs/superpowers/)):
+
+- **Prontuário por consulta** — um campo de texto por consulta realizada, limitado a
+  5.000 caracteres ([`lib/consulta.ts`](lib/consulta.ts)). Reutiliza a coluna
+  `Consulta.notas` que já existia; zero migração, zero tabela nova. Sem anamnese
+  estruturada, sem exames, sem antropometria — texto livre, que é o que o caderno era.
+- **Arquivar paciente** — pacientes que encerraram o acompanhamento saem da lista sem
+  serem apagados (o histórico é dado de saúde; apagar não é opção). A regra de recall já
+  filtrava por `p.ativo` desde o primeiro dia, então arquivar é um `UPDATE` de um campo:
+  a query central não mudou uma linha.
+
+O ponto de portfólio aqui não é a feature, é o processo: escopo recusado não é dogma,
+é uma decisão com data de validade. Quando a dor apareceu, a resposta foi a menor
+implementação que a resolvia — e o que continua de fora, continua de fora.
 
 ## Testes
 
-42 testes, integração contra Postgres de verdade, sem mock de banco. A regra de negócio é
+46 testes, integração contra Postgres de verdade, sem mock de banco. A regra de negócio é
 uma query SQL; testá-la contra um mock testaria o mock.
 
 O detalhe que vale mostrar está em [`prisma/seed.ts`](prisma/seed.ts): cada caso do seed
@@ -231,6 +265,7 @@ npm test
 Tudo abaixo está implementado e dá pra conferir no código:
 
 - Mobile-first de verdade, não adaptação: o celular é o dispositivo principal.
+- Modo escuro completo, com preferência persistida.
 - `prefers-reduced-motion` desliga todas as transições.
 - Foco de teclado visível em tudo, via `:focus-visible`.
 - Todo erro tem `role="alert"`; a barra de ciclo é `role="img"` com `aria-label` que diz
@@ -245,19 +280,21 @@ Tudo abaixo está implementado e dá pra conferir no código:
 
 Dado de saúde é dado pessoal sensível, e isso mudou decisões concretas:
 
-- O resumo diário por e-mail leva nome e prazo, nunca telefone nem observação. É o único
-  ponto onde dado sai do sistema, então é onde menos dado deve passar.
+- O resumo diário por e-mail leva nome e prazo, nunca telefone, observação nem
+  prontuário. É o único ponto onde dado sai do sistema, então é onde menos dado deve
+  passar.
+- O prontuário fica no banco e aparece só na ficha, atrás do login. Nenhum caminho o
+  leva para fora: nem e-mail, nem exportação, nem log.
+- Arquivar não apaga: histórico clínico se preserva, sai só da operação do dia a dia.
 - O seed é fictício por obrigação, não por conveniência: nenhum dado real versionado.
 - Banco nunca exposto publicamente; conexão só por variável de ambiente.
-- O campo `observacoes` é anotação operacional ("prefere terça à tarde"), não conteúdo
-  clínico. Prontuário eu mantenho fora daqui, e a interface não convida ao uso clínico
-  desse campo.
 
 ## O que ficou de fora, de propósito
 
 Nada abaixo é backlog. É escopo recusado:
 
-- Não é prontuário eletrônico. Sem anamnese, exames, antropometria, evolução.
+- Não é prontuário eletrônico completo. A anotação por consulta é texto livre; anamnese
+  estruturada, exames, antropometria e evolução gráfica continuam fora.
 - Não é software de prescrição. Sem plano alimentar, cálculo de macros, tabela TACO.
 - Não é agenda de horários. Sem grade semanal, blocos, disponibilidade, encaixe.
 - Não tem app nem login para o paciente. O paciente nunca acessa o sistema.
@@ -277,11 +314,13 @@ app/
   card-paciente.tsx           o card e a barra de ciclo (client)
   actions.ts                  registrar contato, marcar retorno
   entrar/                     login por senha única
-  pacientes/                  lista, cadastro, ficha, importação de CSV
+  pacientes/                  lista (com toggle de arquivados), cadastro, importação de CSV
+  pacientes/[id]/             ficha, prontuário por consulta, arquivar/reativar
   api/cron/resumo/            e-mail diário das 7h (Vercel Cron + Resend)
 lib/
   recall.ts                   a regra de negócio, em SQL
   paciente.ts                 normalização e validação de telefone (Zod)
+  consulta.ts                 validação do prontuário (limite de 5.000 caracteres)
   csv.ts                      importação por colagem
   mensagem.ts                 o texto e o link wa.me
   sessao.ts                   selo de sessão (SHA-256)
@@ -304,6 +343,6 @@ npm run dev
 ```
 
 ```bash
-npm test                      # 42 testes (precisa de banco)
+npm test                      # 46 testes (precisa de banco)
 npm run recall                # imprime a lista de hoje no terminal
 ```
