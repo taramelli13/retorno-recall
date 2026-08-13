@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { diasDesde, FUSO } from "@/lib/recall";
 import { formatarTelefone } from "@/lib/mensagem";
 import {
+  atualizarNotasConsulta,
   atualizarPaciente,
   consultaRealizadaHoje,
   definirAtivo,
@@ -13,10 +14,10 @@ import {
 import { FormularioPaciente } from "../formulario-paciente";
 import { BotaoWhatsApp } from "./botao-whatsapp";
 import { RegistrarConsulta } from "./registrar-consulta";
+import { Prontuario } from "./prontuario";
 import {
   IconArchive,
   IconCalendar,
-  IconClock,
   IconPhone,
   IconArrowLeft,
   IconCheck,
@@ -65,6 +66,7 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
       data: c.dataHora,
       titulo: CONSULTA[c.status],
       notas: c.notas,
+      consultaId: c.id,
     })),
     ...paciente.contatos.map((c) => ({
       tipo: "CONTATO" as const,
@@ -72,13 +74,14 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
       data: c.data,
       titulo: CONTATO[c.resultado],
       notas: null,
+      consultaId: null,
     })),
   ].sort((a, b) => b.data.getTime() - a.data.getTime());
 
   const inicial = paciente.nome.trim().charAt(0).toUpperCase();
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 pb-20 pt-6">
+    <main className="mx-auto w-full max-w-xl lg:max-w-5xl px-4 pb-20 pt-6">
       {/* Botão de Voltar */}
       <div className="mb-4">
         <Link href="/pacientes" className="inline-flex items-center gap-1.5 text-xs text-suave hover:text-tinta transition-colors font-mono">
@@ -151,50 +154,25 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
 
       {/* Histórico do Paciente */}
       <section className="mb-8">
-        <h2 className="titulo-secao mb-3 flex items-center gap-2">
-          <IconClock className="size-3.5 text-em-dia" />
-          <span>Histórico de Atendimentos & Mensagens</span>
-        </h2>
-
-        {historico.length === 0 ? (
-          <div className="cartao p-8 text-center text-sm text-suave">
-            Nenhum histórico registrado ainda para este paciente.
-          </div>
-        ) : (
-          <ul className="cartao divide-y divide-traco/70 overflow-hidden">
-            {historico.map((e, i) => {
-              const isConsulta = e.tipo === "CONSULTA";
-              const isSucesso = e.status === "REALIZADA" || e.status === "RESPONDEU" || e.status === "REMARCOU";
-              const isAlerta = e.status === "FALTOU" || e.status === "CANCELADA";
-
-              return (
-                <li key={i} className="flex items-start gap-3 px-5 py-3.5 text-sm hover:bg-fundo/50 transition-colors">
-                  <span className="shrink-0 pt-0.5 font-mono text-xs text-suave tabular-nums">
-                    {formatInTimeZone(e.data, FUSO, "dd/MM/yy")}
-                  </span>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`size-2 rounded-full shrink-0 ${
-                        isSucesso ? "bg-em-dia" : isAlerta ? "bg-vencido" : "bg-a-vencer"
-                      }`} />
-                      <span className="font-medium text-tinta">{e.titulo}</span>
-                    </div>
-                    {e.notas && (
-                      <p className="mt-0.5 text-xs text-suave leading-relaxed pl-4">
-                        &ldquo;{e.notas}&rdquo;
-                      </p>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <Prontuario
+          entradas={historico.map((e) => ({
+            consultaId: e.tipo === "CONSULTA" ? e.consultaId : null,
+            data: formatInTimeZone(e.data, FUSO, "dd/MM/yy"),
+            titulo: e.titulo,
+            notas: e.notas,
+            tom:
+              e.status === "REALIZADA" || e.status === "RESPONDEU" || e.status === "REMARCOU"
+                ? ("sucesso" as const)
+                : e.status === "FALTOU" || e.status === "CANCELADA"
+                  ? ("alerta" as const)
+                  : ("neutro" as const),
+          }))}
+          acao={atualizarNotasConsulta.bind(null, paciente.id)}
+        />
       </section>
 
       {/* Edição de Dados */}
-      <section>
+      <section className="max-w-xl">
         <h2 className="titulo-secao mb-3">Dados Cadastrais</h2>
         <div className="cartao">
           <FormularioPaciente
