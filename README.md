@@ -177,7 +177,7 @@ para resolver problema que 30 linhas resolvem.
 
 | Em vez de | Foi feito com |
 |---|---|
-| NextAuth / Auth.js | SHA-256 via `crypto.subtle` + cookie httpOnly, 12 linhas ([`lib/sessao.ts`](lib/sessao.ts)) |
+| NextAuth / Auth.js | token HMAC-SHA256 com prazo, via `crypto.subtle` + cookie httpOnly ([`lib/sessao.ts`](lib/sessao.ts)) |
 | SDK da Resend | `fetch` direto na API REST |
 | SDK `googleapis` | `fetch` na API REST do Calendar + OAuth por refresh token ([`lib/google-calendar.ts`](lib/google-calendar.ts)) |
 | Parser de CSV | 34 linhas com `split` e erro numerado por linha ([`lib/csv.ts`](lib/csv.ts)) |
@@ -187,6 +187,14 @@ para resolver problema que 30 linhas resolvem.
 
 É um sistema de usuário único com uma senha. Uma biblioteca de auth traria banco de
 sessões, provedores OAuth e superfície de ataque que não existe aqui.
+
+O cookie já foi o próprio `SHA-256(senha)`: um valor fixo, idêntico em toda sessão e
+derivado da credencial. Funcionava, mas quem o copiasse tinha acesso vitalício, e o
+único jeito de revogar era trocar a senha. Hoje ele guarda um token assinado com
+HMAC-SHA256 sobre `{ exp, nonce }` — aleatório a cada login, com prazo próprio e sem
+relação com a senha. Girar `APP_SESSION_SECRET` derruba todas as sessões abertas sem
+mexer em como eu entro. A comparação da senha também passou a ser em tempo constante,
+que com uma senha só e sem rate limit não custa nada fechar.
 
 ### Server Components por padrão
 
@@ -325,7 +333,7 @@ lib/
   google-calendar.ts          espelha consultas marcadas na Google Agenda (opcional)
   csv.ts                      importação por colagem
   mensagem.ts                 o texto e o link wa.me
-  sessao.ts                   selo de sessão (SHA-256)
+  sessao.ts                   token de sessão assinado (HMAC-SHA256, com prazo)
 proxy.ts                      middleware de senha (Next 16 renomeou middleware.ts)
 prisma/seed.ts                16 casos-limite com a expectativa declarada
 ```
@@ -338,7 +346,8 @@ de ser confiável, e a confiança na lista é o único ativo do sistema.
 
 ```bash
 npm install
-cp .env.example .env          # preencher DATABASE_URL e APP_PASSWORD
+cp .env.example .env          # DATABASE_URL, APP_PASSWORD e APP_SESSION_SECRET
+openssl rand -base64 32       # gera o APP_SESSION_SECRET
 npx prisma migrate dev
 npm run seed                  # 16 pacientes fictícios
 npm run dev

@@ -1,6 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { COOKIE_SESSAO, selo } from "@/lib/sessao";
+import {
+  COOKIE_SESSAO,
+  DURACAO_SESSAO_S,
+  criaToken,
+  senhaConfere,
+} from "@/lib/sessao";
 import { IconAlertCircle } from "@/app/components/icons";
 
 export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
@@ -9,17 +14,21 @@ export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
   async function entrar(dados: FormData) {
     "use server";
     const senha = process.env.APP_PASSWORD;
+    const segredo = process.env.APP_SESSION_SECRET;
     const tentativa = String(dados.get("senha") ?? "");
 
-    if (!senha || (await selo(tentativa)) !== (await selo(senha))) {
+    // Sem senha ou sem segredo configurado ninguém entra: falhar fechado é o
+    // único desfecho aceitável para uma tela que guarda prontuário.
+    if (!senha || !segredo || !(await senhaConfere(tentativa, senha))) {
       redirect("/entrar?erro=1");
     }
 
-    (await cookies()).set(COOKIE_SESSAO, await selo(senha), {
+    (await cookies()).set(COOKIE_SESSAO, await criaToken(segredo), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 180,
+      maxAge: DURACAO_SESSAO_S,
+      path: "/",
     });
     redirect("/");
   }
